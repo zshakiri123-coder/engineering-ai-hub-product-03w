@@ -81,13 +81,38 @@ let browser;
   const pdf=await page.pdf({format:'A4',printBackground:true});
   assert.ok(pdf.byteLength>1000,'print PDF not empty');
   fs.writeFileSync(path.join(out,'sample-report.pdf'),pdf);
+  const gateTranslations={
+    tr:'Fazla mesai ve vardiya',
+    en:'Overtime and shifts',
+    de:'Überstunden und Schichten',
+    fr:'Heures supplémentaires et équipes',
+    es:'Horas extra y turnos',
+    ar:'العمل الإضافي والورديات',
+    fa:'اضافه‌کاری و شیفت‌ها',
+    ru:'Сверхурочная работа и смены',
+    zh:'加班与班次',
+    ja:'残業とシフト'
+  };
+  const pdfSizes={};
+  for(const [lang,gate] of Object.entries(gateTranslations)){
+    await page.locator('#lang-select').click();
+    await page.locator('#pref-options [data-pref-value="'+lang+'"]').click();
+    await page.locator('[data-nav="reports"]').click();
+    const report=await page.locator('#reports').innerText();
+    assert.ok(report.includes(gate),'translated report gate for '+lang);
+    const localePdf=await page.pdf({format:'A4',printBackground:true});
+    assert.ok(localePdf.byteLength>1000,'valid nonempty PDF for '+lang);
+    fs.writeFileSync(path.join(out,'sample-report-'+lang+'.pdf'),localePdf);
+    pdfSizes[lang]=localePdf.byteLength;
+  }
+  console.log('STEP: generated 10 localized PDF samples and checked release-gate text');
   await page.setViewportSize({width:390,height:844});
   await page.screenshot({path:path.join(out,'mobile-chromium.png'),fullPage:true});
   assert.equal(errors.length,0,'no uncaught browser errors: '+errors.join(' | '));
   console.log(JSON.stringify({
     result:'PASS',languages:languageResults,nav:12,unitToggle:'SI / USC PASS',
     localPersistence:'PASS',jsonExportImport:'PASS',pdfBytes:pdf.byteLength,
-    sampleRecords:json.tasks.length,errors
+    sampleRecords:json.tasks.length,pdfSizes,errors
   },null,2));
   await browser.close();
 })().catch(e=>{console.error(e);process.exitCode=1}).finally(async()=>{if(browser)await browser.close();server.close();});
