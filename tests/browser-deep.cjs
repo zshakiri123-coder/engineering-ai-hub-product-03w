@@ -19,6 +19,15 @@ let browser;
  await page.goto('http://127.0.0.1:'+server.address().port+'/');
  const langs=['tr','en','de','fr','es','ar','fa','ru','zh','ja'];
  const sections=['dashboard','qto','daily','costs','quality','rfis','materials','equipment','labor','reports','release','data'];
+ const expectedNavigation={
+  tr:['Panel','Proje / Dosya'],en:['Dashboard','Project / Files'],de:['Übersicht','Projekt / Dateien'],
+  fr:['Tableau de bord','Projet / Fichiers'],es:['Panel','Proyecto / Archivos'],
+  ar:['لوحة التحكم','المشروع / الملفات'],fa:['داشبورد','پروژه / فایل‌ها'],
+  ru:['Панель','Проект / Файлы'],zh:['仪表盘','项目 / 文件'],
+  ja:['ダッシュボード','プロジェクト / ファイル']
+ };
+ const textOf=async(sel)=>(await page.locator(sel).innerText()).trim();
+ const navLabels=[];
  let visits=0;
  for(const lang of langs){
    await page.locator('#lang-select').click();
@@ -26,10 +35,20 @@ let browser;
    for(const section of sections){
      await page.locator('[data-nav="'+section+'"]').click();
      assert.equal(await page.locator('section.panel.active').getAttribute('id'),section,'active section '+section+' / '+lang);
+     if(section==='dashboard'){
+       const expected=expectedNavigation[lang][0];
+       assert.equal(await textOf('[data-nav="dashboard"]'),expected,'dashboard translation '+lang);
+     }
+     if(section==='data'){
+       const expected=expectedNavigation[lang][1];
+       assert.equal(await textOf('[data-nav="data"]'),expected,'project/files translation '+lang);
+       navLabels.push(lang+':'+expected);
+     }
      visits++;
    }
  }
  console.log('STEP: navigated all '+visits+' language/section combinations');
+ console.log('STEP: independently checked navigation text for all 10 languages: '+navLabels.join(' | '));
  await page.locator('[data-action="load-sample-site"]').first().click();
  await page.locator('[data-nav="qto"]').click();
  await page.locator('#qto [data-action="edit-task"]').first().click();
