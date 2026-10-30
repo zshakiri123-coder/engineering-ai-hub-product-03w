@@ -54,9 +54,13 @@ let browser;
   await page.locator('[data-action="load-sample-site"]').first().click();
   const before=(await page.locator('#project-name').innerText()).trim();
   assert.ok(before.length>2,'sample project name');
-  const downloadPromise=page.waitForEvent('download');
+  const clickDownload=page.waitForEvent('download',{timeout:7000}).catch(()=>null);
   await page.locator('[data-action="export-json"]').first().click();
-  const download=await downloadPromise;
+  const download=await clickDownload;
+  if(!download){
+    const uiToast=await page.locator('#toast').innerText().catch(()=>'-');
+    throw new Error('JSON export did not produce a Chromium download. Toast: '+uiToast+'; page errors: '+errors.join(' | '));
+  }
   const json=JSON.parse(fs.readFileSync(await download.path(),'utf8'));
   assert.ok(json.project.name,'exported project name');
   assert.ok(Array.isArray(json.tasks),'exported task list');
