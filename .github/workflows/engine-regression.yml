@@ -4,6 +4,7 @@ on:
     paths:
       - 'index.html'
       - 'tests/**'
+      - 'qa/**'
       - '.github/workflows/engine-regression.yml'
   pull_request:
     paths:
@@ -20,4 +21,4 @@ jobs:
         with:
           node-version: '22'
       - name: Run regression suite
-        run: node --test tests/engine-regression.test.cjs
+        run: node --test tests/*.test.cjs qa/*.test.cjs
