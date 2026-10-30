@@ -54,6 +54,7 @@ let browser;
   await page.locator('[data-action="load-sample-site"]').first().click();
   const before=(await page.locator('#project-name').innerText()).trim();
   assert.ok(before.length>2,'sample project name');
+  await page.locator('[data-nav="data"]').click();
   const clickDownload=page.waitForEvent('download',{timeout:7000}).catch(()=>null);
   await page.locator('#data.panel.active [data-action="export-json"]').click();
   const download=await clickDownload;
