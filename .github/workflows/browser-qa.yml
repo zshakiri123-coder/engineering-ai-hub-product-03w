@@ -4,6 +4,7 @@ on:
     paths:
       - 'index.html'
       - 'tests/browser-smoke.cjs'
+      - 'tests/browser-deep.cjs'
       - '.github/workflows/browser-qa.yml'
   pull_request:
     paths:
@@ -25,7 +26,9 @@ jobs:
           npm install --no-save playwright@1.56.1
           npx playwright install --with-deps chromium
       - name: Run real Chromium web UI checks and generate sample PDF
-        run: node tests/browser-smoke.cjs
+        run: |
+          node tests/browser-smoke.cjs
+          node tests/browser-deep.cjs
       - name: Upload visual QA artifacts
         if: always()
         uses: actions/upload-artifact@v4
