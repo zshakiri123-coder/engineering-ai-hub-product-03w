@@ -1,5 +1,5 @@
 'use strict';
-const {chromium}=require('playwright');
+const {chromium,webkit,devices}=require('playwright');
 const fs=require('node:fs');
 const path=require('node:path');
 const http=require('node:http');
@@ -9,8 +9,9 @@ const server=http.createServer((req,res)=>{res.writeHead(200,{'content-type':'te
 let browser;
 (async()=>{
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
- browser=await chromium.launch({headless:true,args:['--no-sandbox']});
- const context=await browser.newContext({viewport:{width:390,height:844}});
+ const isWebKit=process.env.BROWSER_ENGINE==='webkit';
+ browser=await (isWebKit?webkit:chromium).launch({headless:true,...(isWebKit?{}:{args:['--no-sandbox']})});
+ const context=await browser.newContext(process.env.BROWSER_ENGINE==='webkit'?{...devices['iPhone 13'],viewport:{width:390,height:844}}:{viewport:{width:390,height:844}});
  const page=await context.newPage();
  page.setDefaultTimeout(15000);
  page.on('dialog',d=>d.accept());
@@ -58,6 +59,6 @@ let browser;
  assert.ok(data.daily.some(x=>Array.isArray(x.attachments)&&x.attachments.some(a=>a.name==='qa-camera-image.png')),'photo persists after reload');
  assert.ok(data.tasks.some(x=>x.title==='QA PERSISTENCE WORK ITEM 2026'),'edited task remains after reload');
  assert.deepEqual(errors,[],'no uncaught JS errors');
- console.log(JSON.stringify({result:'PASS',languageSectionNavigations:visits,viewport:'390x844 Chromium emulation',taskEditPersistence:'PASS',photoAttachmentPersistence:'PASS',jsErrors:errors.length}));
+ console.log(JSON.stringify({result:'PASS',languageSectionNavigations:visits,viewport:process.env.BROWSER_ENGINE==='webkit'?'390x844 touch-enabled WebKit emulation':'390x844 Chromium emulation',taskEditPersistence:'PASS',photoAttachmentPersistence:'PASS',jsErrors:errors.length}));
  await context.close();
 })().catch(err=>{console.error(err);process.exitCode=1}).finally(async()=>{if(browser)await browser.close();server.close();});
