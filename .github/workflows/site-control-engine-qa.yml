@@ -1,6 +1,13 @@
 name: Product 03W - Engine QA
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - index.html
+      - tests/**
+      - .github/workflows/site-control-engine-qa.yml
   push:
     branches:
       - qa/site-control-automated-2026-10-30
