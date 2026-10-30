@@ -13,9 +13,10 @@ const server=http.createServer((req,res)=>{
   res.end(pageHtml);
 });
 const listen=()=>new Promise(r=>server.listen(0,'127.0.0.1',r));
+let browser;
 (async()=>{
   await listen();
-  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+  browser=await chromium.launch({headless:true,args:['--no-sandbox']});
   const errors=[];
   const context=await browser.newContext({acceptDownloads:true,viewport:{width:1280,height:850}});
   const page=await context.newPage();
@@ -81,4 +82,4 @@ const listen=()=>new Promise(r=>server.listen(0,'127.0.0.1',r));
     sampleRecords:json.tasks.length,errors
   },null,2));
   await browser.close();
-})().catch(e=>{console.error(e);process.exitCode=1}).finally(()=>server.close());
+})().catch(e=>{console.error(e);process.exitCode=1}).finally(async()=>{if(browser)await browser.close();server.close();});
