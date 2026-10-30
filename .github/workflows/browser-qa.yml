@@ -1,0 +1,35 @@
+name: Product 03W - Headless Browser QA
+on:
+  push:
+    paths:
+      - 'index.html'
+      - 'tests/browser-smoke.cjs'
+      - '.github/workflows/browser-qa.yml'
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'tests/browser-smoke.cjs'
+      - '.github/workflows/browser-qa.yml'
+  workflow_dispatch:
+jobs:
+  chromium-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test dependencies
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Run real Chromium web UI checks and generate sample PDF
+        run: node tests/browser-smoke.cjs
+      - name: Upload visual QA artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-control-browser-qa
+          path: browser-artifacts/
+          if-no-files-found: ignore
