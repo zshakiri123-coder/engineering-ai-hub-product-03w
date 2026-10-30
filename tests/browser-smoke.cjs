@@ -51,7 +51,7 @@ let browser;
   assert.match(await page.locator('#unit-select').innerText(),/SI/,'SI restoration');
   console.log('STEP: sample project + JSON export/import');
   await page.locator('[data-nav="data"]').click();
-  await page.locator('[data-action="load-sample-site"]').click();
+  await page.locator('[data-action="load-sample-site"]').first().click();
   const before=(await page.locator('#project-name').innerText()).trim();
   assert.ok(before.length>2,'sample project name');
   const downloadPromise=page.waitForEvent('download');
