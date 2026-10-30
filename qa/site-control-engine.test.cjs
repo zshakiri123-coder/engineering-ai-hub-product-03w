@@ -33,7 +33,7 @@ test('Metraj EV: BAC=2400, EV=960, AC=900, PV=2400', () => {
   assert.equal(v.BAC,2400);assert.equal(v.EV,960);assert.equal(v.AC,900);assert.equal(v.PV,2400);
   assert.equal(v.progress,0.4);assert.equal(v.CPI,1.06666667);assert.equal(v.SPI,0.4);
 });
-test('All synthetically documented gates return PASS (NOT real-world certification)', () => assert.equal(E.release(fixture()).status,'PASS'));
+test('Synthetic TEST references satisfy five field gates but never authorize release', () => {assert.equal(E.gates(fixture()).allPass,true);assert.equal(E.release(fixture()).status,'HOLD')});
 test('Missing QTO source blocks CHK-006', () => {const s=fixture();s.tasks[0].sourceRef='';assert.equal(gate(s,'CHK-006'),1);assert.equal(E.release(s).status,'HOLD')});
 test('Overtime without approval blocks CHK-008', () => {const s=fixture();s.daily[0].hours=20;assert.equal(gate(s,'CHK-008'),1);s.daily[0].overtimeApproved=true;s.daily[0].overtimeRef='TEST-OT-REF';assert.equal(gate(s,'CHK-008'),0)});
 test('Open QA blocks CHK-010', () => {const s=fixture();s.qa[0].status='OPEN';assert.equal(gate(s,'CHK-010'),1);assert.equal(E.release(s).status,'HOLD')});
@@ -45,7 +45,7 @@ test('Invalid JSON schema rejected, valid fixture imported', () => {
  assert.throws(()=>E.safeImport({schema:3,project:{reportDate:'broken'}}));
  const v=E.safeImport(fixture());assert.equal(v.tasks.length,1);
 });
-test('JSON backup uses current REV 3.11.5 filename', () => {
- assert.ok(html.includes("JSONFILE='Site_Control_Project_REV3_11_5.json'"));
+test('JSON backup uses current REV 3.11.6 filename', () => {
+ assert.ok(html.includes("JSONFILE='Site_Control_Project_REV3_11_6.json'"));
  assert.ok(!html.includes("JSONFILE='Site_Control_Project_REV3_10.json'"));
 });
