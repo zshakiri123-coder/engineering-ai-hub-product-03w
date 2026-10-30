@@ -1,0 +1,22 @@
+name: Product 03W - Engine QA
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - qa/site-control-automated-2026-10-30
+    paths:
+      - index.html
+      - tests/**
+      - .github/workflows/site-control-engine-qa.yml
+jobs:
+  engine-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test the actual app engine and verification gates
+        run: node --test tests/site-engine.test.cjs
