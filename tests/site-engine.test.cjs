@@ -30,7 +30,7 @@ test('Version header REV 3.11.6',()=>assert.match(html,/Site Control REV 3\.11\.
 test('Unverified QA/SSOT: exactly 3 PASS 2 HOLD',()=>{
  const g=E.gates(sample()).rows;
  assert.equal(g.filter(x=>x.open===0).length,3);
- assert.deepEqual(g.filter(x=>x.open>0).map(x=>x.code),['CHK-010','CHK-015']);
+ assert.deepEqual(Array.from(g.filter(x=>x.open>0).map(x=>x.code)),['CHK-010','CHK-015']);
 });
 test('Unverified records keep release HOLD',()=>assert.equal(E.release(sample()).status,'HOLD'));
 test('TEST SSOT reference cannot produce PASS',()=>{
