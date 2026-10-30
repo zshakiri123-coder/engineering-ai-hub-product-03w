@@ -1,0 +1,23 @@
+name: Product 03W deterministic engine tests
+on:
+  push:
+    paths:
+      - 'index.html'
+      - 'tests/**'
+      - '.github/workflows/engine-regression.yml'
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'tests/**'
+      - '.github/workflows/engine-regression.yml'
+  workflow_dispatch:
+jobs:
+  engine-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run regression suite
+        run: node --test tests/engine-regression.test.cjs
