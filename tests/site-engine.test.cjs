@@ -101,3 +101,43 @@ test('SI-USC conversion and JSON workflows are present',()=>{
  assert.match(html,/function exportJson\(\)/);assert.match(html,/function importJson\(\)/);
 });
 test('Print report action exists',()=>assert.match(html,/window\.print\(/));
+
+test('Leap-year dates accepted, invalid dates rejected',()=>{
+ assert.equal(E.validDate('2024-02-29'),true);assert.equal(E.validDate('2026-02-29'),false);
+});
+test('Workdays excludes weekends',()=>{
+ assert.equal(E.workdays('2026-10-26','2026-10-30'),5);
+ assert.equal(E.workdays('2026-10-31','2026-11-01'),0);
+});
+test('Planned fraction is bounded before and after dates',()=>{
+ const t={start:'2026-10-02',finish:'2026-10-09'};
+ assert.equal(E.plannedFraction(t,'2026-10-01'),0);
+ assert.equal(E.plannedFraction(t,'2026-10-10'),1);
+});
+test('QA evidence without an inspector remains HOLD',()=>{
+ const s=sample();Object.assign(s.qa[0],{status:'PASS',evidence:'QA-101',inspector:''});
+ assert.equal(gate(s,'CHK-010').open,1);
+});
+test('SSOT checkbox without an independent checker remains HOLD',()=>{
+ const s=sample();Object.assign(s.tasks[0],{ssotRef:'ENG-101',ssotVerified:true,ssotChecker:''});
+ assert.equal(gate(s,'CHK-015').open,1);
+});
+test('Lowercase TEST reference still blocks release',()=>{
+ const s=checked(sample());s.tasks[0].ssotRef='test-only-ssot-001';
+ assert.equal(E.release(s).status,'HOLD');
+});
+test('Mock QA evidence still blocks release',()=>{
+ const s=checked(sample());s.qa[0].evidence='MOCK-QA-1';
+ assert.equal(E.release(s).status,'HOLD');
+});
+test('One missing SSOT check among multiple tasks is HOLD',()=>{
+ const s=checked(sample());s.tasks.push({...clone(s.tasks[0]),id:'T-002',ssotVerified:false,ssotChecker:''});
+ assert.equal(gate(s,'CHK-015').open,1);assert.equal(E.release(s).status,'HOLD');
+});
+test('Duplicate QA inspection IDs in imported JSON are rejected',()=>{
+ const s=sample();s.qa.push(clone(s.qa[0]));shouldReject(s);
+});
+test('Unknown linked activity in daily log is rejected by import',()=>{
+ const s=sample();s.daily.push({id:'D-1',taskId:'UNKNOWN',date:'2026-10-03',qty:1,people:1,hours:8,cost:0});
+ shouldReject(s);
+});
