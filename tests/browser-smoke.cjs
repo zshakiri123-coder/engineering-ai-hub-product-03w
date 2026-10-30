@@ -55,7 +55,7 @@ let browser;
   const before=(await page.locator('#project-name').innerText()).trim();
   assert.ok(before.length>2,'sample project name');
   const clickDownload=page.waitForEvent('download',{timeout:7000}).catch(()=>null);
-  await page.locator('[data-action="export-json"]').first().click();
+  await page.locator('#data.panel.active [data-action="export-json"]').click();
   const download=await clickDownload;
   if(!download){
     const uiToast=await page.locator('#toast').innerText().catch(()=>'-');
