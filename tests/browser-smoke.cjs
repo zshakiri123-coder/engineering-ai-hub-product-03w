@@ -69,6 +69,8 @@ let browser;
   await page.locator('#import-file').setInputFiles({
     name:'qa-project.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(json))
   });
+  // FileReader parses imports asynchronously after input change; wait for the rendered project to update.
+  await page.locator('#project-name').filter({hasText:/Web Browser QA Sample/}).waitFor({state:'visible',timeout:12000});
   assert.match(await page.locator('#project-name').innerText(),/Web Browser QA Sample/,'JSON imported');
   await page.reload();
   assert.match(await page.locator('#project-name').innerText(),/Web Browser QA Sample/,'JSON restored after reload');
