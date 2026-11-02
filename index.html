@@ -184,6 +184,8 @@ const number=v=>Number.isFinite(Number(v))?Number(v):0;
 const validNumeric=v=>v!==undefined&&v!==null&&String(v).trim()!==''&&Number.isFinite(Number(v));
 const validPositive=v=>validNumeric(v)&&Number(v)>0;
 const validNonnegative=v=>validNumeric(v)&&Number(v)>=0;
+const hasText=v=>typeof v==='string'&&v.trim().length>0;
+const independentReviewers=(a,b)=>hasText(a)&&hasText(b)&&a.trim().toLocaleLowerCase()!==b.trim().toLocaleLowerCase();
 const isTestRef=v=>{const s=String(v||'').trim();return /^(?:TEST|MOCK|DUMMY)(?:[-_ ]|$)/i.test(s)||/(?:^|[^A-Z0-9])(?:TEST[-_ ]ONLY|MOCK|DUMMY)(?:[-_ ]|$)/i.test(s);};
 const validDate=s=>{if(typeof s!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(s))return false;const [y,m,d]=s.split('-').map(Number);if(y<1||m<1||m>12||d<1)return false;const days=new Date(Date.UTC(y,m,0)).getUTCDate();return d<=days;};
 const sortDate=(a,b)=>a.localeCompare(b);
@@ -198,11 +200,11 @@ const AC= daily.filter(l=>validDate(l.date)&&l.date<=reportDate).reduce((n,l)=>n
 const actualHours=daily.filter(l=>validDate(l.date)&&l.date<=reportDate).reduce((n,l)=>n+Math.max(0,number(l.hours)),0);
 return {BAC:R(BAC),EV:R(EV),PV:R(PV),AC:R(AC),CPI:AC>0?R(EV/AC):null,SPI:PV>0?R(EV/PV):null,progress:BAC>0?R(EV/BAC):0,plannedProgress:BAC>0?R(PV/BAC):0,actualHours:R(actualHours),earnedHours:R(earnedHours),items};}
 function gates(st){const tasks=st.tasks||[],daily=st.daily||[],qa=st.qa||[];const standardHours=number(st.project?.standardHours)||8;
-const qtoOpen=tasks.filter(t=>!(validPositive(t.qty)&&validNonnegative(t.budget)&&t.sourceRef?.trim()&&t.qtoChecker?.trim()&&t.qtoApproved===true));
-const overtime=daily.filter(l=>number(l.hours)>number(l.people)*standardHours).filter(l=>!(l.overtimeApproved===true&&l.overtimeRef?.trim()));
-const qaOpen=qa.filter(q=>!(q.status==='PASS'&&q.evidence?.trim()&&q.inspector?.trim()));
-const baselineOpen=tasks.filter(t=>!(validDate(t.start)&&validDate(t.finish)&&t.start<=t.finish&&validNonnegative(t.baselineHours)&&t.baselineApproved===true&&t.baselineRef?.trim()));
-const ssotOpen=tasks.filter(t=>!(t.ssotVerified===true&&t.ssotRef?.trim()&&t.ssotChecker?.trim()));
+const qtoOpen=tasks.filter(t=>!(validPositive(t.qty)&&validNonnegative(t.budget)&&hasText(t.sourceRef)&&hasText(t.qtoChecker)&&t.qtoApproved===true));
+const overtime=daily.filter(l=>number(l.hours)>number(l.people)*standardHours).filter(l=>!(l.overtimeApproved===true&&hasText(l.overtimeRef)));
+const qaOpen=qa.filter(q=>!(q.status==='PASS'&&hasText(q.evidence)&&hasText(q.inspector)));
+const baselineOpen=tasks.filter(t=>!(validDate(t.start)&&validDate(t.finish)&&t.start<=t.finish&&validNonnegative(t.baselineHours)&&t.baselineApproved===true&&hasText(t.baselineRef)));
+const ssotOpen=tasks.filter(t=>!(t.ssotVerified===true&&hasText(t.ssotRef)&&hasText(t.ssotChecker)&&independentReviewers(t.qtoChecker,t.ssotChecker)));
 const rows=[
  {code:'CHK-006',title:'QTO / metraj kaynağı',open:tasks.length? qtoOpen.length:1,issue:tasks.length?`${qtoOpen.length} iş kalemi kaynak/doğrulama bekliyor`:'En az bir gerçek iş kalemi gerekli',done:tasks.length-qtoOpen.length,section:'qto'},
  {code:'CHK-008',title:'Fazla mesai ve vardiya',open:overtime.length,issue:`${overtime.length} izinsiz fazla mesai kaydı`,done:daily.length-overtime.length,section:'daily'},
@@ -260,6 +262,8 @@ function safeImport(value){
      if(typeof rec.taskId==='string'&&rec.taskId.length>120)throw Error(section+' / '+rec.id+' : geçersiz iş kodu');
    }
  }
+ const textFields={tasks:['sourceRef','qtoChecker','baselineRef','ssotRef','ssotChecker'],qa:['status','evidence','inspector'],daily:['overtimeRef']};
+ for(const section of Object.keys(textFields))for(const rec of result[section])for(const key of textFields[section])if(rec[key]!==undefined&&rec[key]!==null&&typeof rec[key]!=='string')throw Error(section+' / '+rec.id+' : '+key+' metin olmalıdır');
  const ids=new Set(result.tasks.map(t=>t.id));
  for(const section of ['daily','costs','qa','rfis','materials','equipment','labor'])for(const record of result[section])if(record.taskId&&!ids.has(record.taskId))throw Error(section+' içinde bilinmeyen iş kodu: '+record.taskId);
  result.project.unitSystem='SI';
