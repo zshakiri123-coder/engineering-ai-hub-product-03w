@@ -1,0 +1,36 @@
+name: Product 03W - WebKit mobile acceptance regression
+on:
+  push:
+    branches:
+      - qa/site-control-automated-2026-10-30
+    paths:
+      - index.html
+      - tests/browser-deep.cjs
+      - .github/workflows/webkit-qa.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - index.html
+      - tests/browser-deep.cjs
+      - .github/workflows/webkit-qa.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  webkit-mobile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install WebKit browser test dependencies
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps webkit
+      - name: Test 10 languages x 12 sections, QTO editing, photo and storage with touch-enabled WebKit
+        env:
+          BROWSER_ENGINE: webkit
+        run: node tests/browser-deep.cjs
