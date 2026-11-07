@@ -133,6 +133,23 @@ let browser;
  const reconciled=await page.evaluate(()=>{const s=JSON.parse(localStorage.getItem('product03w.sitecontrol.rev3_5.project'));return {daily:s.daily.length,costs:s.costs.length,AC:SiteEngine.calc(s).AC,EV:SiteEngine.calc(s).EV,warnings:SiteEngine.costWarnings(s).length};});
  assert.deepEqual(reconciled,{daily:1,costs:1,AC:125,EV:0,warnings:0},'explicit reconciliation retains records and counts amount once');
  console.log('STEP: synthetic duplicate payment warning, blocked save, distinct identities and explicit zero-cost reconciliation PASS');
+
+ // Imported historical conflicts must be repairable one at a time.
+ const twoGroups=JSON.parse(JSON.stringify(paymentProject));twoGroups.project.name='MULTIPLE SYNTHETIC CONFLICTS';
+ twoGroups.daily=[{id:'D-G1',taskId:'A',date:'2026-11-06',qty:0,hours:8,people:1,cost:125,paymentRef:'G1'},{id:'D-G2',taskId:'A',date:'2026-11-06',qty:0,hours:8,people:1,cost:200,paymentRef:'G2'}];
+ twoGroups.costs=[{id:'C-G1',taskId:'A',date:'2026-11-06',amount:125,paymentRef:'G1',category:'Other'},{id:'C-G2',taskId:'A',date:'2026-11-06',amount:200,paymentRef:'G2',category:'Other'}];
+ await page.locator('[data-nav="data"]').click();
+ await page.locator('#import-file').setInputFiles({name:'multiple-synthetic-conflicts.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(twoGroups))});
+ await page.locator('#project-name').filter({hasText:'MULTIPLE SYNTHETIC CONFLICTS'}).waitFor();
+ await page.locator('[data-nav="costs"]').click();
+ for(const id of ['C-G1','C-G2']){
+   await page.locator('#costs [data-action="edit-cost"][data-id="'+id+'"]').click();
+   await page.locator('#edit_amount').fill('0');await page.locator('#save-edit').click();
+   assert.equal(await page.locator('#editor').getAttribute('open'),null,'each existing duplicate can be reconciled independently');
+ }
+ const finalPayments=await page.evaluate(()=>{const s=JSON.parse(localStorage.getItem('product03w.sitecontrol.rev3_5.project'));return {AC:SiteEngine.calc(s).AC,warnings:SiteEngine.costWarnings(s).length,records:s.daily.length+s.costs.length};});
+ assert.deepEqual(finalPayments,{AC:325,warnings:0,records:4},'multiple conflicts resolved while preserving all records');
+ console.log('STEP: multiple existing payment conflicts can be reconciled one at a time PASS');
  assert.deepEqual(errors,[],'no uncaught JS errors');
  console.log(JSON.stringify({result:'PASS',languageSectionNavigations:visits,viewport:engine==='webkit'?'iPhone 13 WebKit emulation (not physical Safari)':'390x844 Chromium emulation',dismissalFlows:'PASS',cpmBrowserFlows:'PASS',paymentReconciliation:'PASS',taskEditPersistence:'PASS',photoAttachmentPersistence:'PASS',jsErrors:errors.length}));
  await context.close();
