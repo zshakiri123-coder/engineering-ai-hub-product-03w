@@ -1,5 +1,7 @@
 'use strict';
-const {chromium}=require('playwright');
+const {chromium,webkit,devices}=require('playwright');
+const engine=process.env.BROWSER||'chromium';
+if(!['chromium','webkit'].includes(engine))throw Error('Unsupported BROWSER: '+engine);
 const fs=require('node:fs');
 const path=require('node:path');
 const http=require('node:http');
@@ -9,8 +11,8 @@ const server=http.createServer((req,res)=>{res.writeHead(200,{'content-type':'te
 let browser;
 (async()=>{
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
- browser=await chromium.launch({headless:true,args:['--no-sandbox']});
- const context=await browser.newContext({viewport:{width:390,height:844}});
+ browser=await (engine==='webkit'?webkit:chromium).launch(engine==='webkit'?{headless:true}:{headless:true,executablePath:process.env.CHROMIUM_PATH||undefined,args:['--no-sandbox']});
+ const context=await browser.newContext(engine==='webkit'?{...devices['iPhone 13']}:{viewport:{width:390,height:844}});
  const page=await context.newPage();
  page.setDefaultTimeout(15000);
  page.on('dialog',d=>d.accept());
@@ -40,6 +42,22 @@ let browser;
  await page.locator('[data-nav="qto"]').click();
  assert.ok((await page.locator('#qto').innerText()).includes('QA PERSISTENCE WORK ITEM 2026'),'task editing persisted after reload');
  console.log('STEP: edited task saved and restored');
+ // Cancel and Escape must discard edits and leave navigation usable.
+ const saved=await page.evaluate(()=>localStorage.getItem('product03w.sitecontrol.rev3_5.project'));
+ for(const dismiss of ['cancel','escape']){
+   await page.locator('#qto [data-action="edit-task"]').first().click();
+   await page.locator('#edit_title').fill('MUST NOT BE SAVED');
+   if(dismiss==='cancel')await page.locator('#cancel').click();else await page.keyboard.press('Escape');
+   assert.equal(await page.locator('#editor').getAttribute('open'),null,'dismiss closes editor');
+   assert.equal(await page.evaluate(()=>localStorage.getItem('product03w.sitecontrol.rev3_5.project')),saved,'discarded edit leaves persisted state unchanged');
+ }
+ for(let n=0;n<3;n++){
+   await page.locator('#lang-select').click();await page.locator('#pref-close').click();
+   assert.equal(await page.locator('#pref-dialog').getAttribute('open'),null,'repeated preference close');
+ }
+ await page.locator('[data-nav="reports"]').click();
+ await page.locator('[data-nav="qto"]').click();
+ assert.equal(await page.locator('section.panel.active').getAttribute('id'),'qto','navigation usable after dialog dismissal');
  await page.locator('[data-nav="daily"]').click();
  await page.locator('#daily [data-action="edit-daily"]').first().click();
  const imageData=await page.evaluate(()=>{
@@ -58,6 +76,6 @@ let browser;
  assert.ok(data.daily.some(x=>Array.isArray(x.attachments)&&x.attachments.some(a=>a.name==='qa-camera-image.png')),'photo persists after reload');
  assert.ok(data.tasks.some(x=>x.title==='QA PERSISTENCE WORK ITEM 2026'),'edited task remains after reload');
  assert.deepEqual(errors,[],'no uncaught JS errors');
- console.log(JSON.stringify({result:'PASS',languageSectionNavigations:visits,viewport:'390x844 Chromium emulation',taskEditPersistence:'PASS',photoAttachmentPersistence:'PASS',jsErrors:errors.length}));
+ console.log(JSON.stringify({result:'PASS',languageSectionNavigations:visits,viewport:engine==='webkit'?'iPhone 13 WebKit emulation (not physical Safari)':'390x844 Chromium emulation',dismissalFlows:'PASS',taskEditPersistence:'PASS',photoAttachmentPersistence:'PASS',jsErrors:errors.length}));
  await context.close();
 })().catch(err=>{console.error(err);process.exitCode=1}).finally(async()=>{if(browser)await browser.close();server.close();});
