@@ -75,7 +75,36 @@ let browser;
  data=await page.evaluate(()=>JSON.parse(localStorage.getItem('product03w.sitecontrol.rev3_5.project')));
  assert.ok(data.daily.some(x=>Array.isArray(x.attachments)&&x.attachments.some(a=>a.name==='qa-camera-image.png')),'photo persists after reload');
  assert.ok(data.tasks.some(x=>x.title==='QA PERSISTENCE WORK ITEM 2026'),'edited task remains after reload');
+
+ // Exercise the new CPM controls through real browser forms, not engine calls.
+ const cpmProject={schema:3,mode:'REAL',project:{name:'CPM BROWSER QA',reportDate:'2026-11-06',standardHours:8,currency:'CAD',isExample:true},tasks:[
+   {id:'A',title:'CPM A',unit:'m³',qty:10,budget:1000,start:'2026-11-02',finish:'2026-11-03',baselineHours:16},
+   {id:'B',title:'CPM B',unit:'m³',qty:10,budget:1000,start:'2026-11-02',finish:'2026-11-04',baselineHours:24},
+   {id:'C',title:'CPM C',unit:'m³',qty:10,budget:1000,start:'2026-11-02',finish:'2026-11-02',baselineHours:8,predecessors:'B'}
+ ],daily:[],costs:[],qa:[],rfis:[],materials:[],equipment:[],labor:[]};
+ await page.locator('[data-nav="data"]').click();
+ await page.locator('#import-file').setInputFiles({name:'cpm-browser-fixture.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(cpmProject))});
+ await page.locator('#project-name').filter({hasText:'CPM BROWSER QA'}).waitFor();
+ await page.locator('[data-nav="qto"]').click();
+ await page.locator('#qto [data-action="edit-task"][data-id="B"]').click();
+ await page.locator('#edit_predecessors').fill('A');
+ await page.locator('#save-edit').click();
+ assert.equal(await page.locator('#editor').getAttribute('open'),null,'CPM predecessor form saves');
+ assert.match(await page.locator('#qto').innerText(),/CPM · 6 working days/,'CPM network recalculates from form input');
+ await page.reload();await page.locator('[data-nav="qto"]').click();
+ assert.match(await page.locator('#qto').innerText(),/CPM · 6 working days/,'CPM links persist after reload');
+ await page.locator('#qto [data-action="delete-task"][data-id="A"]').click();
+ assert.equal(await page.locator('#qto [data-action="edit-task"][data-id="A"]').count(),1,'linked predecessor cannot be deleted');
+ await page.locator('#qto [data-action="edit-task"][data-id="A"]').click();
+ await page.locator('#edit_predecessors').fill('C');
+ await page.locator('#save-edit').click();
+ assert.equal(await page.locator('#editor').getAttribute('open'),'','cycle is rejected without closing form');
+ assert.match(await page.locator('#formerrors').innerText(),/cyclic/,'cycle error is visible');
+ await page.locator('#cancel').click();
+ await page.locator('[data-nav="reports"]').click();
+ assert.match(await page.locator('#reports').innerText(),/CPM · 6 working days/,'CPM report matches saved network');
+ console.log('STEP: CPM form, reload, cycle rejection, deletion guard and report PASS');
  assert.deepEqual(errors,[],'no uncaught JS errors');
- console.log(JSON.stringify({result:'PASS',languageSectionNavigations:visits,viewport:engine==='webkit'?'iPhone 13 WebKit emulation (not physical Safari)':'390x844 Chromium emulation',dismissalFlows:'PASS',taskEditPersistence:'PASS',photoAttachmentPersistence:'PASS',jsErrors:errors.length}));
+ console.log(JSON.stringify({result:'PASS',languageSectionNavigations:visits,viewport:engine==='webkit'?'iPhone 13 WebKit emulation (not physical Safari)':'390x844 Chromium emulation',dismissalFlows:'PASS',cpmBrowserFlows:'PASS',taskEditPersistence:'PASS',photoAttachmentPersistence:'PASS',jsErrors:errors.length}));
  await context.close();
 })().catch(err=>{console.error(err);process.exitCode=1}).finally(async()=>{if(browser)await browser.close();server.close();});
