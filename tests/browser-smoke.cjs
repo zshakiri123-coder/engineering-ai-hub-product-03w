@@ -16,7 +16,7 @@ const listen=()=>new Promise(r=>server.listen(0,'127.0.0.1',r));
 let browser;
 (async()=>{
   await listen();
-  browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+  browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||undefined,args:['--no-sandbox']});
   const errors=[];
   const context=await browser.newContext({acceptDownloads:true,viewport:{width:1280,height:850}});
   const page=await context.newPage();
