@@ -1,0 +1,25 @@
+name: Site Control Automated Acceptance
+on:
+  push:
+    branches:
+      - qa/automated-acceptance-rev3-11-5
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'tests/**'
+      - '.github/workflows/site-control-acceptance.yml'
+  workflow_dispatch:
+jobs:
+  engineering-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Configure Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run deterministic engine acceptance tests
+        run: node --test tests/site-engine.acceptance.test.cjs
