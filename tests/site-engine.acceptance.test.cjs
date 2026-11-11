@@ -27,7 +27,7 @@ function fixture(){
 function gate(s,id){return E.gates(s).rows.find(r=>r.code===id);}
 function approx(a,b){assert.ok(Math.abs(a-b)<1e-6, String(a)+' != '+String(b));}
 
-test('Production HTML contains REV 3.11.5',()=>assert.match(html,/REV 3\.11\.5/));
+test('Production HTML includes versioned Product 03W title',()=>assert.match(html,/<title>Product 03W[^<]*REV 3\.11\.\d+<\/title>/));
 test('All embedded Javascript scripts pass parsing',()=>{for(const [i,js] of scripts.entries())assert.doesNotThrow(()=>new vm.Script(js,{filename:'inline-'+i+'.js'}));});
 test('Engine exposes expected functions',()=>['newProject','calc','gates','release','safeImport','cpm','workdays','costWarnings','validDate'].forEach(k=>assert.equal(typeof E[k],'function')));
 test('new project has eight clean record arrays',()=>{const s=E.newProject();['tasks','daily','costs','qa','rfis','materials','equipment','labor'].forEach(k=>assert.equal(s[k].length,0));});
