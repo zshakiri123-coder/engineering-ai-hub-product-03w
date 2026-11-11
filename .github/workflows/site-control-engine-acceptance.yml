@@ -1,0 +1,29 @@
+name: Site Control deterministic engine acceptance
+on:
+  push:
+    branches:
+      - qa/site-control-engine-acceptance-20261111
+      - main
+    paths:
+      - index.html
+      - tests/site-control-engine-acceptance.cjs
+      - .github/workflows/site-control-engine-acceptance.yml
+  pull_request:
+    paths:
+      - index.html
+      - tests/site-control-engine-acceptance.cjs
+      - .github/workflows/site-control-engine-acceptance.yml
+permissions:
+  contents: read
+jobs:
+  engine:
+    name: Engine acceptance (Node.js 22)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check real SiteEngine, EVM, CPM, QA/QC, SSOT and JSON validation
+        run: node tests/site-control-engine-acceptance.cjs
