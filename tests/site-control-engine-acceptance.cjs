@@ -25,9 +25,9 @@ const testCases=[];
 function test(name,fn){testCases.push({name,fn});}
 function fixture(){
  const s=E.newProject();
- s.project={name:'Synthetic automated test',number:'QA-SYN-001',currency:'CAD',reportDate:'2026-10-24',standardHours:8,isExample:false};
- s.tasks=[{id:'T-001',title:'Foundation concrete',wbs:'03.01',unit:'m³',qty:10,unitRate:240,budget:2400,baselineHours:40,start:'2026-10-24',finish:'2026-10-24',sourceRef:'BOQ-03.01',qtoChecker:'A Reviewer',qtoApproved:true,baselineApproved:true,baselineRef:'BL-APP-01',ssotVerified:true,ssotRef:'SSOT-APP-01',ssotChecker:'B Reviewer'}];
- s.daily=[{id:'DAY-001',date:'2026-10-24',taskId:'T-001',qty:4,hours:16,people:2,cost:900}];
+ s.project={name:'Synthetic automated test',number:'QA-SYN-001',currency:'CAD',reportDate:'2026-10-26',standardHours:8,isExample:false};
+ s.tasks=[{id:'T-001',title:'Foundation concrete',wbs:'03.01',unit:'m³',qty:10,unitRate:240,budget:2400,baselineHours:40,start:'2026-10-26',finish:'2026-10-26',sourceRef:'BOQ-03.01',qtoChecker:'A Reviewer',qtoApproved:true,baselineApproved:true,baselineRef:'BL-APP-01',ssotVerified:true,ssotRef:'SSOT-APP-01',ssotChecker:'B Reviewer'}];
+ s.daily=[{id:'DAY-001',date:'2026-10-26',taskId:'T-001',qty:4,hours:16,people:2,cost:900}];
  s.qa=[{id:'QA-001',taskId:'T-001',status:'PASS',inspector:'C Inspector',evidence:'QC-INSPECTION-01'}];
  return s;
 }
@@ -59,7 +59,7 @@ test('Explicit sample project cannot pass release',()=>{const s=fixture();s.proj
 test('Negative quantities and budgets are rejected by consistency validator',()=>{for(const k of ['qty','budget']){const s=fixture();s.tasks[0][k]=-5;assert.ok(E.issues(s).length>0);assert.equal(E.release(s).status,'HOLD');}});
 test('Duplicate task IDs are detected',()=>{const s=fixture();s.tasks.push({...s.tasks[0]});assert.match(E.issues(s).join(' '),/Tekrarlı|duplicate/i);});
 test('Payment identity duplicated in daily and costs is flagged',()=>{const s=fixture();s.daily[0].paymentRef='INV-001';s.costs=[{id:'C-001',taskId:'T-001',date:'2026-10-24',amount:900,paymentRef:'INV-001'}];assert.ok(E.costWarnings(s).some(w=>w.type==='identity'));assert.equal(E.release(s).status,'HOLD');});
-test('Later daily logs are excluded at report date',()=>{const s=fixture();s.daily.push({id:'DAY-002',date:'2026-10-25',taskId:'T-001',qty:10,hours:8,people:1,cost:500});const r=E.calc(s);close(r.EV,960);close(r.AC,900);});
+test('Later daily logs are excluded at report date',()=>{const s=fixture();s.daily.push({id:'DAY-002',date:'2026-10-27',taskId:'T-001',qty:10,hours:8,people:1,cost:500});const r=E.calc(s);close(r.EV,960);close(r.AC,900);});
 test('Earned value caps at authorized task quantity',()=>{const s=fixture();s.daily[0].qty=40;const r=E.calc(s);close(r.EV,2400);close(r.progress,1);});
 test('Valid CPM chain gives expected ES EF LS LF float',()=>{const s=fixture();s.tasks=[{id:'A',start:'2026-11-02',finish:'2026-11-03'},{id:'B',start:'2026-11-04',finish:'2026-11-05',predecessors:'A'}];const r=E.cpm(s);assert.equal(r.valid,true);assert.equal(r.duration,4);assert.equal(r.items[0].EF,2);assert.equal(r.items[1].ES,2);assert.equal(r.items[1].LF,4);assert.equal(r.items[0].totalFloat,0);});
 test('Cycle and missing CPM predecessor both fail safely',()=>{const s=fixture();s.tasks=[{id:'A',start:'2026-11-02',finish:'2026-11-02',predecessors:'B'},{id:'B',start:'2026-11-03',finish:'2026-11-03',predecessors:'A'}];assert.equal(E.cpm(s).valid,false);s.tasks[0].predecessors='UNKNOWN';assert.equal(E.cpm(s).valid,false);});

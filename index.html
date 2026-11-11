@@ -241,7 +241,7 @@ function gates(st){const tasks=st.tasks||[],daily=st.daily||[],qa=st.qa||[];cons
 const qtoOpen=tasks.filter(t=>!(validPositive(t.qty)&&validNonnegative(t.budget)&&hasText(t.sourceRef)&&hasText(t.qtoChecker)&&t.qtoApproved===true));
 const overtime=daily.filter(l=>number(l.hours)>number(l.people)*standardHours).filter(l=>!(l.overtimeApproved===true&&hasText(l.overtimeRef)));
 const qaOpen=qa.filter(q=>!(q.status==='PASS'&&hasText(q.evidence)&&hasText(q.inspector)));
-const baselineOpen=tasks.filter(t=>!(validDate(t.start)&&validDate(t.finish)&&t.start<=t.finish&&validNonnegative(t.baselineHours)&&t.baselineApproved===true&&hasText(t.baselineRef)));
+const baselineOpen=tasks.filter(t=>!(validDate(t.start)&&validDate(t.finish)&&t.start<=t.finish&&workdays(t.start,t.finish)>0&&validNonnegative(t.baselineHours)&&t.baselineApproved===true&&hasText(t.baselineRef)));
 const ssotOpen=tasks.filter(t=>!(t.ssotVerified===true&&hasText(t.ssotRef)&&hasText(t.ssotChecker)&&independentReviewers(t.qtoChecker,t.ssotChecker)));
 const rows=[
  {code:'CHK-006',title:'QTO / metraj kaynağı',open:tasks.length? qtoOpen.length:1,issue:tasks.length?`${qtoOpen.length} iş kalemi kaynak/doğrulama bekliyor`:'En az bir gerçek iş kalemi gerekli',done:tasks.length-qtoOpen.length,section:'qto'},

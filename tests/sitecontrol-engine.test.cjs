@@ -17,12 +17,12 @@ const E=sandbox.module.exports;
 assert.equal(typeof E.release,'function');
 function sample(){
  const s=E.newProject();
- s.project={name:'Site Control Test 001',number:'TEST-SC-001',reportDate:'2026-10-24',currency:'CAD',standardHours:8};
+ s.project={name:'Site Control Test 001',number:'TEST-SC-001',reportDate:'2026-10-26',currency:'CAD',standardHours:8};
  s.tasks=[{id:'T-001',title:'Temel betonu',wbs:'03.01',unit:'m³',qty:10,budget:2400,unitRate:240,
- start:'2026-10-24',finish:'2026-10-24',baselineHours:40,baselineApproved:true,baselineRef:'TEST-BL-REV00',
+ start:'2026-10-26',finish:'2026-10-26',baselineHours:40,baselineApproved:true,baselineRef:'TEST-BL-REV00',
  sourceRef:'TEST-BOQ-03.01',qtoChecker:'Seyitali',qtoApproved:true,
  ssotVerified:false,ssotRef:'TEST-ONLY-SSOT-001',ssotChecker:''}];
- s.daily=[{id:'DAY-001',taskId:'T-001',date:'2026-10-24',qty:4,hours:16,people:2,cost:900}];
+ s.daily=[{id:'DAY-001',taskId:'T-001',date:'2026-10-26',qty:4,hours:16,people:2,cost:900}];
  s.qa=[{id:'QA-001',taskId:'T-001',status:'OPEN',evidence:'',inspector:'',note:'Test kaydıdır. Gerçek denetim yapılmadı.'}];
  return s;
 }
@@ -68,7 +68,7 @@ test('sample project cannot release',()=>{
  assert.equal(E.release(s).status,'HOLD');
 });
 test('cost ledger counted once',()=>{const s=sample();s.costs=[{id:'C-1',date:'2026-10-24',amount:100}];assert.equal(E.calc(s).AC,1000);});
-test('future daily excluded',()=>{const s=sample();s.daily[0].date='2026-10-25';assert.equal(E.calc(s).AC,0);assert.equal(E.calc(s).EV,0);});
+test('future daily excluded',()=>{const s=sample();s.daily[0].date='2026-10-27';assert.equal(E.calc(s).AC,0);assert.equal(E.calc(s).EV,0);});
 test('daily overtime detected',()=>{const s=sample();s.daily[0].hours=17;assert.equal(E.gates(s).rows[1].open,1);});
 test('approved overtime cleared',()=>{const s=sample();Object.assign(s.daily[0],{hours:17,overtimeApproved:true,overtimeRef:'OT-001'});assert.equal(E.gates(s).rows[1].open,0);});
 test('overtime numeric ref no crash',()=>{const s=sample();Object.assign(s.daily[0],{hours:17,overtimeApproved:true,overtimeRef:123});assert.equal(E.gates(s).rows[1].open,1);});

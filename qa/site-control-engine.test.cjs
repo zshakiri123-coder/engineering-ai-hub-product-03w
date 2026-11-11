@@ -16,12 +16,12 @@ assert.equal(typeof E.release, 'function');
 function fixture() {
   const s = E.newProject();
   s.project.name = 'AUTOMATED TEST ONLY';
-  s.project.reportDate = '2026-10-24';
+  s.project.reportDate = '2026-10-26';
   s.project.standardHours = 8;
   s.tasks = [{id:'T-001',wbs:'03.01',title:'Temel betonu',unit:'m³',qty:10,unitRate:240,budget:2400,baselineHours:40,
-    start:'2026-10-24',finish:'2026-10-24',sourceRef:'TEST-BOQ-001',qtoChecker:'TEST-CHECKER',qtoApproved:true,
+    start:'2026-10-26',finish:'2026-10-26',sourceRef:'TEST-BOQ-001',qtoChecker:'TEST-CHECKER',qtoApproved:true,
     baselineApproved:true,baselineRef:'TEST-BL-001',ssotVerified:true,ssotRef:'TEST-SSOT-001',ssotChecker:'TEST-INDEPENDENT-CHECKER'}];
-  s.daily = [{id:'G-001',taskId:'T-001',date:'2026-10-24',qty:4,hours:16,people:2,cost:900}];
+  s.daily = [{id:'G-001',taskId:'T-001',date:'2026-10-26',qty:4,hours:16,people:2,cost:900}];
   s.qa = [{id:'QA-001',taskId:'T-001',title:'TEST QA ONLY',status:'PASS',inspector:'TEST-INSPECTOR',evidence:'TEST-EVIDENCE-REF'}];
   return s;
 }

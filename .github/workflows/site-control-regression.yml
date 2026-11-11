@@ -1,0 +1,23 @@
+name: Site Control deterministic regression
+on:
+  push:
+    branches:
+      - main
+      - 'audit/**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  engine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run actual embedded SiteEngine regression tests
+        run: node --test tests/site_control_engine.test.cjs
