@@ -16,12 +16,12 @@ new Function('module',source)(isolatedModule);
 const E=isolatedModule.exports;
 function base(){
  const s=E.newProject();
- s.project={name:'Factory A',reportDate:'2026-10-24',standardHours:8,currency:'CAD',isExample:false};
+ s.project={name:'Factory A',reportDate:'2026-10-26',standardHours:8,currency:'CAD',isExample:false};
  s.tasks=[{id:'T-001',title:'Foundation',qty:10,budget:2400,baselineHours:40,
-  start:'2026-10-24',finish:'2026-10-24',sourceRef:'BOQ-03.01',
+  start:'2026-10-26',finish:'2026-10-26',sourceRef:'BOQ-03.01',
   qtoChecker:'Inspector',qtoApproved:true,baselineApproved:true,baselineRef:'BL-REV00',
   ssotRef:'SSOT-001',ssotChecker:'Independent',ssotVerified:true}];
- s.daily=[{id:'D-001',taskId:'T-001',date:'2026-10-24',qty:4,hours:16,people:2,cost:900}];
+ s.daily=[{id:'D-001',taskId:'T-001',date:'2026-10-26',qty:4,hours:16,people:2,cost:900}];
  s.qa=[{id:'QA-001',taskId:'T-001',title:'Foundation QA',status:'PASS',
   inspector:'Inspector',evidence:'INS-001'}];
  return s;
