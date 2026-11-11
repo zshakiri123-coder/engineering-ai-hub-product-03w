@@ -25,9 +25,9 @@ const testCases=[];
 function test(name,fn){testCases.push({name,fn});}
 function fixture(){
  const s=E.newProject();
- s.project={name:'Synthetic automated test',number:'QA-SYN-001',currency:'CAD',reportDate:'2026-10-24',standardHours:8,isExample:false};
- s.tasks=[{id:'T-001',title:'Foundation concrete',wbs:'03.01',unit:'m³',qty:10,unitRate:240,budget:2400,baselineHours:40,start:'2026-10-24',finish:'2026-10-24',sourceRef:'BOQ-03.01',qtoChecker:'A Reviewer',qtoApproved:true,baselineApproved:true,baselineRef:'BL-APP-01',ssotVerified:true,ssotRef:'SSOT-APP-01',ssotChecker:'B Reviewer'}];
- s.daily=[{id:'DAY-001',date:'2026-10-24',taskId:'T-001',qty:4,hours:16,people:2,cost:900}];
+ s.project={name:'Synthetic automated test',number:'QA-SYN-001',currency:'CAD',reportDate:'2026-10-26',standardHours:8,isExample:false};
+ s.tasks=[{id:'T-001',title:'Foundation concrete',wbs:'03.01',unit:'m³',qty:10,unitRate:240,budget:2400,baselineHours:40,start:'2026-10-26',finish:'2026-10-26',sourceRef:'BOQ-03.01',qtoChecker:'A Reviewer',qtoApproved:true,baselineApproved:true,baselineRef:'BL-APP-01',ssotVerified:true,ssotRef:'SSOT-APP-01',ssotChecker:'B Reviewer'}];
+ s.daily=[{id:'DAY-001',date:'2026-10-26',taskId:'T-001',qty:4,hours:16,people:2,cost:900}];
  s.qa=[{id:'QA-001',taskId:'T-001',status:'PASS',inspector:'C Inspector',evidence:'QC-INSPECTION-01'}];
  return s;
 }
