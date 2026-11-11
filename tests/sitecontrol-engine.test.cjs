@@ -17,12 +17,12 @@ const E=sandbox.module.exports;
 assert.equal(typeof E.release,'function');
 function sample(){
  const s=E.newProject();
- s.project={name:'Site Control Test 001',number:'TEST-SC-001',reportDate:'2026-10-24',currency:'CAD',standardHours:8};
+ s.project={name:'Site Control Test 001',number:'TEST-SC-001',reportDate:'2026-10-26',currency:'CAD',standardHours:8};
  s.tasks=[{id:'T-001',title:'Temel betonu',wbs:'03.01',unit:'m³',qty:10,budget:2400,unitRate:240,
- start:'2026-10-24',finish:'2026-10-24',baselineHours:40,baselineApproved:true,baselineRef:'TEST-BL-REV00',
+ start:'2026-10-26',finish:'2026-10-26',baselineHours:40,baselineApproved:true,baselineRef:'TEST-BL-REV00',
  sourceRef:'TEST-BOQ-03.01',qtoChecker:'Seyitali',qtoApproved:true,
  ssotVerified:false,ssotRef:'TEST-ONLY-SSOT-001',ssotChecker:''}];
- s.daily=[{id:'DAY-001',taskId:'T-001',date:'2026-10-24',qty:4,hours:16,people:2,cost:900}];
+ s.daily=[{id:'DAY-001',taskId:'T-001',date:'2026-10-26',qty:4,hours:16,people:2,cost:900}];
  s.qa=[{id:'QA-001',taskId:'T-001',status:'OPEN',evidence:'',inspector:'',note:'Test kaydıdır. Gerçek denetim yapılmadı.'}];
  return s;
 }
