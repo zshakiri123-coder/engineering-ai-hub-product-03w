@@ -5,12 +5,14 @@ on:
       - 'index.html'
       - 'tests/browser-smoke.cjs'
       - 'tests/browser-deep.cjs'
+      - 'tests/site-engine.acceptance.test.cjs'
       - '.github/workflows/browser-qa.yml'
   pull_request:
     paths:
       - 'index.html'
       - 'tests/browser-smoke.cjs'
       - 'tests/browser-deep.cjs'
+      - 'tests/site-engine.acceptance.test.cjs'
       - '.github/workflows/browser-qa.yml'
   workflow_dispatch:
 jobs:
