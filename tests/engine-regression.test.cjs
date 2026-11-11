@@ -53,7 +53,7 @@ const gateCases=[
 for(const [name,index,mutate] of gateCases)check(name+' -> HOLD',()=>{const s=base();mutate(s);return E.gates(s).rows[index].open===1});
 check('Overtime without approval HOLD',()=>{const s=base();s.daily[0].hours=17;return E.gates(s).rows[1].open===1});
 check('Overtime properly approved PASS',()=>{const s=base();s.daily[0].hours=17;s.daily[0].overtimeApproved=true;s.daily[0].overtimeRef='OT-001';return E.gates(s).rows[1].open===0});
-check('Future daily excluded from EV and AC',()=>{const s=base();s.daily[0].date='2026-10-25';return E.calc(s).EV===0&&E.calc(s).AC===0});
+check('Future daily excluded from EV and AC',()=>{const s=base();s.daily[0].date='2026-10-27';return E.calc(s).EV===0&&E.calc(s).AC===0});
 check('Progress capped at plan quantity',()=>{const s=base();s.daily[0].qty=20;return E.calc(s).EV===2400});
 check('Separate actual cost included',()=>{const s=base();s.costs=[{id:'C-001',date:'2026-10-24',amount:50}];return E.calc(s).AC===950});
 check('Duplicate task detected',()=>{const s=base();s.tasks.push({...s.tasks[0]});return E.issues(s).some(x=>x.includes('Tekrarlı'))});
@@ -63,7 +63,7 @@ check('Invalid budget detected',()=>{const s=base();s.tasks[0].budget='BAD';retu
 check('Invalid leap date rejected',()=>!E.validDate('2026-02-29'));
 check('Valid leap date accepted',()=>E.validDate('2024-02-29'));
 check('Five weekday span',()=>E.workdays('2026-10-26','2026-10-30')===5);
-check('Weekend workdays zero',()=>E.workdays('2026-10-24','2026-10-25')===0);
+check('Weekend workdays zero',()=>E.workdays('2026-10-24','2026-10-27')===0);
 check('JSON import good roundtrip',()=>E.safeImport(base()).tasks.length===1);
 check('JSON invalid schema rejected',()=>{try{E.safeImport({schema:1,project:{}});return false}catch{return true}});
 check('Example project cannot release',()=>{const s=base();s.project.isExample=true;return E.release(s).status==='HOLD'});
