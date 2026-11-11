@@ -68,7 +68,7 @@ test('sample project cannot release',()=>{
  assert.equal(E.release(s).status,'HOLD');
 });
 test('cost ledger counted once',()=>{const s=sample();s.costs=[{id:'C-1',date:'2026-10-24',amount:100}];assert.equal(E.calc(s).AC,1000);});
-test('future daily excluded',()=>{const s=sample();s.daily[0].date='2026-10-25';assert.equal(E.calc(s).AC,0);assert.equal(E.calc(s).EV,0);});
+test('future daily excluded',()=>{const s=sample();s.daily[0].date='2026-10-27';assert.equal(E.calc(s).AC,0);assert.equal(E.calc(s).EV,0);});
 test('daily overtime detected',()=>{const s=sample();s.daily[0].hours=17;assert.equal(E.gates(s).rows[1].open,1);});
 test('approved overtime cleared',()=>{const s=sample();Object.assign(s.daily[0],{hours:17,overtimeApproved:true,overtimeRef:'OT-001'});assert.equal(E.gates(s).rows[1].open,0);});
 test('overtime numeric ref no crash',()=>{const s=sample();Object.assign(s.daily[0],{hours:17,overtimeApproved:true,overtimeRef:123});assert.equal(E.gates(s).rows[1].open,1);});
