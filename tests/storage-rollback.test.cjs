@@ -6,7 +6,7 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
-const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+const html=fs.readFileSync(process.env.STORAGE_SOURCE||path.join(__dirname,'..','index.html'),'utf8');
 const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)];
 assert.ok(scripts.length>=3,'app script exists');
 const app=scripts[2][1];
@@ -25,10 +25,11 @@ function initial(){
   tasks:[],daily:[],costs:[{id:'C-001',amount:20}],qa:[],rfis:[],materials:[],equipment:[],labor:[]};
 }
 function harness(allowWrite=true,allowConfirm=true){
- const spec={state:initial(),allowWrite,allowConfirm};
+ const spec={state:initial(),allowWrite,allowConfirm,legacy:JSON.stringify({...initial(),mode:'DEMO',project:{name:'LEGACY PROJECT',reportDate:'2026-10-30'}})};
  const program=[
   'let state=spec.state; let storageOK=true; let navCount=0; let renderCount=0; const messages=[];',
   "const collection={cost:'costs'};",
+  "const OLD_KEY='legacy';const localStorage={getItem:()=>spec.legacy};",
   "const E={newProject:()=>({...spec.state,project:{name:'NEW PROJECT',reportDate:'2026-10-30'},costs:[]}),safeImport:x=>x};",
   "const SAMPLE_SITE={...spec.state,project:{name:'SAMPLE PROJECT',reportDate:'2026-10-30'},costs:[]};",
   'const copy=x=>JSON.parse(JSON.stringify(x));',
@@ -100,4 +101,33 @@ test('Successful sample import replaces project',()=>{
 });
 test('All embedded scripts parse as JavaScript',()=>{
  for(let i=0;i<scripts.length;i++) assert.doesNotThrow(()=>new Function(scripts[i][1]),'script '+i);
+});
+
+
+test('Failed legacy import retains current project and does not claim success',()=>{
+ const {ctl,spec}=harness(false),old=spec.legacy;
+ ctl.runAction('import-legacy');
+ assert.equal(ctl.getState().project.name,'KEEP THIS PROJECT');
+ assert.equal(ctl.getNavCount(),0);
+ assert.ok(ctl.getMessages().some(m=>m.startsWith('Eski veri yüklenemedi:')));
+ assert.ok(!ctl.getMessages().some(m=>m.includes('yeni sürüme kopyalandı')));
+ assert.equal(spec.legacy,old,'original legacy backup is untouched');
+});
+test('Successful legacy import preserves old backup and keeps DEMO marked as example',()=>{
+ const {ctl,spec}=harness(true),old=spec.legacy;ctl.runAction('import-legacy');
+ assert.equal(ctl.getState().project.name,'LEGACY PROJECT');
+ assert.equal(ctl.getState().mode,'REAL');assert.equal(ctl.getState().project.isExample,true);
+ assert.equal(ctl.getNavCount(),1);assert.equal(spec.legacy,old);
+});
+test('Cancelled legacy import leaves current and old project intact',()=>{
+ const {ctl,spec}=harness(true,false),old=spec.legacy;ctl.runAction('import-legacy');
+ assert.equal(ctl.getState().project.name,'KEEP THIS PROJECT');assert.equal(ctl.getNavCount(),0);assert.equal(spec.legacy,old);
+});
+test('Malformed legacy JSON cannot replace current project',()=>{
+ const {ctl,spec}=harness();spec.legacy='{bad json';ctl.runAction('import-legacy');
+ assert.equal(ctl.getState().project.name,'KEEP THIS PROJECT');assert.equal(ctl.getNavCount(),0);assert.equal(spec.legacy,'{bad json');
+});
+test('Missing legacy data leaves current project intact',()=>{
+ const {ctl,spec}=harness();spec.legacy=null;ctl.runAction('import-legacy');
+ assert.equal(ctl.getState().project.name,'KEEP THIS PROJECT');assert.equal(ctl.getNavCount(),0);
 });

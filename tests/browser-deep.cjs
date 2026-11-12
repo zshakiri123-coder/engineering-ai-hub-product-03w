@@ -150,7 +150,30 @@ let browser;
  const finalPayments=await page.evaluate(()=>{const s=JSON.parse(localStorage.getItem('product03w.sitecontrol.rev3_5.project'));return {AC:SiteEngine.calc(s).AC,warnings:SiteEngine.costWarnings(s).length,records:s.daily.length+s.costs.length};});
  assert.deepEqual(finalPayments,{AC:325,warnings:0,records:4},'multiple conflicts resolved while preserving all records');
  console.log('STEP: multiple existing payment conflicts can be reconciled one at a time PASS');
+ // Legacy migration must be transactional when local storage rejects the write.
+ await page.locator('[data-nav="data"]').click();
+ const beforeLegacy=await page.evaluate(()=>{
+   const key='product03w.sitecontrol.rev3_5.project',oldKey='product03w.sitecontrol.rev3.project';
+   const current=localStorage.getItem(key),legacy=JSON.parse(current);
+   legacy.mode='DEMO';legacy.project.name='LEGACY SYNTHETIC MIGRATION';
+   localStorage.setItem(oldKey,JSON.stringify(legacy));
+   window.__csvQaSetItem=Storage.prototype.setItem;
+   Storage.prototype.setItem=function(k,v){if(k===key)throw new DOMException('Simulated storage quota','QuotaExceededError');return window.__csvQaSetItem.call(this,k,v);};
+   return {current,legacy:localStorage.getItem(oldKey)};
+ });
+ await page.locator('[data-action="import-legacy"]').click();
+ assert.equal(await page.evaluate(()=>localStorage.getItem('product03w.sitecontrol.rev3_5.project')),beforeLegacy.current,'failed migration preserves current persisted project');
+ assert.ok(!(await page.locator('#project-name').innerText()).includes('LEGACY SYNTHETIC MIGRATION'),'failed migration restores current in-memory project');
+ assert.equal(await page.locator('section.panel.active').getAttribute('id'),'data','failed migration does not navigate');
+ await page.evaluate(()=>{Storage.prototype.setItem=window.__csvQaSetItem;delete window.__csvQaSetItem;});
+ await page.locator('[data-action="import-legacy"]').click();
+ assert.ok((await page.locator('#project-name').innerText()).includes('LEGACY SYNTHETIC MIGRATION'),'retry imports legacy project');
+ const afterLegacy=await page.evaluate(()=>({current:JSON.parse(localStorage.getItem('product03w.sitecontrol.rev3_5.project')),legacy:localStorage.getItem('product03w.sitecontrol.rev3.project')}));
+ assert.equal(afterLegacy.current.project.isExample,true,'legacy demo remains an example');
+ assert.equal(afterLegacy.legacy,beforeLegacy.legacy,'migration preserves original legacy backup');
+ console.log('STEP: failed legacy migration rollback and successful retry PASS');
  assert.deepEqual(errors,[],'no uncaught JS errors');
  console.log(JSON.stringify({result:'PASS',languageSectionNavigations:visits,viewport:engine==='webkit'?'iPhone 13 WebKit emulation (not physical Safari)':'390x844 Chromium emulation',dismissalFlows:'PASS',cpmBrowserFlows:'PASS',paymentReconciliation:'PASS',taskEditPersistence:'PASS',photoAttachmentPersistence:'PASS',jsErrors:errors.length}));
  await context.close();
 })().catch(err=>{console.error(err);process.exitCode=1}).finally(async()=>{if(browser)await browser.close();server.close();});
+
