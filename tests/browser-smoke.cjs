@@ -66,6 +66,9 @@ let browser;
   assert.ok(json.project.name,'exported project name');
   assert.ok(Array.isArray(json.tasks),'exported task list');
   json.project.name='Web Browser QA Sample 2026-10-30';
+  json.daily[0].paymentRef='CSV-BROWSER-PAY-01';
+  json.costs[0].paymentRef='CSV-BROWSER-PAY-02';
+  json.qa[0].correctiveAction='CSV audit: comma, quote " and Unicode 施工';
   await page.locator('#import-file').setInputFiles({
     name:'qa-project.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(json))
   });
@@ -74,6 +77,36 @@ let browser;
   assert.match(await page.locator('#project-name').innerText(),/Web Browser QA Sample/,'JSON imported');
   await page.reload();
   assert.match(await page.locator('#project-name').innerText(),/Web Browser QA Sample/,'JSON restored after reload');
+  console.log('STEP: real CSV downloads preserve audit fields and canonical units');
+  // Unit preference must never silently change the stored-value CSV quantities.
+  await page.locator('#unit-select').click();
+  await page.locator('#pref-options [data-pref-value="USC"]').click();
+  await page.locator('[data-nav="data"]').click();
+  const persistedBeforeCsv=await page.evaluate(()=>localStorage.getItem('product03w.sitecontrol.rev3_5.project'));
+  for(const [route,markers] of Object.entries({
+    qto:['"unitRate"','"baselineHours"','"predecessors"'],
+    daily:['"paymentRef"','CSV-BROWSER-PAY-01','"quantityUnit"','"attachmentNames"'],
+    costs:['"paymentRef"','CSV-BROWSER-PAY-02','"invoice"'],
+    qa:['"correctiveAction"','CSV audit: comma, quote "" and Unicode 施工'],
+    rfis:['"exportCurrency"'],
+    materials:['"id"','MAT-001','"inspector"'],
+    equipment:['"id"','EQ-001','"owner"'],
+    labor:['"id"','LB-001','"HoursPerPerson"','"totalManHours"'],
+    summary:['"exportCurrency"','"exportUnitSystem"']
+  })){
+    const pending=page.waitForEvent('download');
+    await page.locator('#data [data-action="export-'+route+'"]').click();
+    const file=await pending;
+    const content=fs.readFileSync(await file.path(),'utf8');
+    assert.equal(content[0],'\ufeff','Excel UTF-8 BOM '+route);
+    for(const marker of markers)assert.ok(content.includes(marker),route+' CSV preserves '+marker);
+    assert.ok(content.includes('"SI"'),'canonical SI metadata '+route);
+    assert.ok(content.includes('"CAD"'),'currency metadata '+route);
+    assert.ok(content.includes('"2026-10-21"'),'report date metadata '+route);
+    fs.writeFileSync(path.join(out,file.suggestedFilename()),content);
+  }
+  assert.equal(await page.evaluate(()=>localStorage.getItem('product03w.sitecontrol.rev3_5.project')),persistedBeforeCsv,'CSV downloads do not mutate project');
+  console.log('STEP: all 9 CSV downloads PASS');
   console.log('STEP: screenshot and print PDF');
   await page.screenshot({path:path.join(out,'desktop.png'),fullPage:true});
   await page.locator('[data-nav="reports"]').click();
