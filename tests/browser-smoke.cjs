@@ -13,6 +13,21 @@ const server=http.createServer((req,res)=>{
   res.end(pageHtml);
 });
 const listen=()=>new Promise(r=>server.listen(0,'127.0.0.1',r));
+function readCsv(content){
+  assert.equal(content[0],'\ufeff');
+  const lines=[];let row=[],cell='',quoted=false;
+  for(let i=1;i<content.length;i++){
+    const c=content[i];
+    if(c==='"'){if(quoted&&content[i+1]==='"'){cell+='"';i++;}else quoted=!quoted;}
+    else if(c===','&&!quoted){row.push(cell);cell='';}
+    else if(c==='\r'&&content[i+1]==='\n'&&!quoted){row.push(cell);lines.push(row);row=[];cell='';i++;}
+    else cell+=c;
+  }
+  assert.equal(quoted,false);row.push(cell);lines.push(row);
+  const [headers,...values]=lines;
+  return values.map(values=>{assert.equal(values.length,headers.length);return Object.fromEntries(headers.map((h,i)=>[h,values[i]]));});
+}
+
 let browser;
 (async()=>{
   await listen();
@@ -67,6 +82,7 @@ let browser;
   assert.ok(Array.isArray(json.tasks),'exported task list');
   json.project.name='Web Browser QA Sample 2026-10-30';
   json.daily[0].paymentRef='CSV-BROWSER-PAY-01';
+  json.daily[0].temperature=-4.5;
   json.costs[0].paymentRef='CSV-BROWSER-PAY-02';
   json.qa[0].correctiveAction='CSV audit: comma, quote " and Unicode 施工';
   await page.locator('#import-file').setInputFiles({
@@ -83,6 +99,20 @@ let browser;
   await page.locator('#pref-options [data-pref-value="USC"]').click();
   await page.locator('[data-nav="data"]').click();
   const persistedBeforeCsv=await page.evaluate(()=>localStorage.getItem('product03w.sitecontrol.rev3_5.project'));
+  const actualCost=json.daily.filter(x=>x.date<=json.project.reportDate).reduce((s,x)=>s+x.cost,0)+json.costs.filter(x=>x.date<=json.project.reportDate).reduce((s,x)=>s+x.amount,0);
+  const budget=json.tasks.reduce((s,x)=>s+x.budget,0);
+  const earned=json.tasks.reduce((sum,t)=>sum+t.budget*Math.min(1,json.daily.filter(x=>x.taskId===t.id&&x.date<=json.project.reportDate).reduce((s,x)=>s+x.qty,0)/t.qty),0);
+  const expectedCsv={
+    qto:{ID:json.tasks[0].id,Unit:json.tasks[0].unit,PlanQty:json.tasks[0].qty,BAC:json.tasks[0].budget,unitRate:json.tasks[0].unitRate},
+    daily:{ID:json.daily[0].id,Quantity:json.daily[0].qty,ManHours:json.daily[0].hours,Cost:json.daily[0].cost,temperature:-4.5},
+    costs:{ID:json.costs[0].id,Amount:json.costs[0].amount},
+    qa:{ID:json.qa[0].id,correctiveAction:json.qa[0].correctiveAction},
+    rfis:{ID:json.rfis[0].id},
+    materials:{id:json.materials[0].id,Miktar:json.materials[0].qty,'Birim Maliyet':json.materials[0].unitCost},
+    equipment:{id:json.equipment[0].id,'Yakıt L':json.equipment[0].fuel,'Saatlik Bedel':json.equipment[0].rate},
+    labor:{id:json.labor[0].id,HoursPerPerson:json.labor[0].hours,totalManHours:json.labor[0].crew*json.labor[0].hours},
+    summary:{'Bütçe':budget,'Gerçek maliyet':actualCost,'Kazanılan değer':earned}
+  };
   for(const [route,markers] of Object.entries({
     qto:['"unitRate"','"baselineHours"','"predecessors"'],
     daily:['"paymentRef"','CSV-BROWSER-PAY-01','"quantityUnit"','"attachmentNames"'],
@@ -103,6 +133,12 @@ let browser;
     assert.ok(content.includes('"SI"'),'canonical SI metadata '+route);
     assert.ok(content.includes('"CAD"'),'currency metadata '+route);
     assert.ok(content.includes('"2026-10-21"'),'report date metadata '+route);
+    const rows=readCsv(content);
+    assert.ok(rows.length>0,'nonempty sample CSV '+route);
+    for(const [field,expected] of Object.entries(expectedCsv[route])){
+      if(typeof expected==='number')assert.ok(Math.abs(Number(rows[0][field])-expected)<1e-6,route+' canonical number '+field);
+      else assert.equal(rows[0][field],String(expected),route+' exact text '+field);
+    }
     fs.writeFileSync(path.join(out,file.suggestedFilename()),content);
   }
   assert.equal(await page.evaluate(()=>localStorage.getItem('product03w.sitecontrol.rev3_5.project')),persistedBeforeCsv,'CSV downloads do not mutate project');
